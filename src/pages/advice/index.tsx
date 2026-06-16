@@ -38,11 +38,34 @@ const AdvicePage: React.FC = () => {
     return state.environmentChecklist.length > 0 ? state.environmentChecklist : mockEnvironmentChecklist;
   }, [state.environmentChecklist]);
 
+  const [newReminderId, setNewReminderId] = useState<string | null>(null);
+
   const reminders = useMemo<RetestReminder[]>(() => {
-    return state.reminders.length > 0 ? state.reminders : mockReminders;
+    const list = state.reminders.length > 0 ? state.reminders : mockReminders;
+    return [...list].sort((a, b) => {
+      const aTime = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0;
+      const bTime = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
   }, [state.reminders]);
 
   useDidShow(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedTab = window.localStorage.getItem('advice_active_tab');
+        const savedNewId = window.localStorage.getItem('advice_new_reminder_id');
+        if (savedTab === 'reminder') {
+          setActiveTab('reminder');
+          window.localStorage.removeItem('advice_active_tab');
+        }
+        if (savedNewId) {
+          setNewReminderId(savedNewId);
+          window.localStorage.removeItem('advice_new_reminder_id');
+          setTimeout(() => setNewReminderId(null), 3000);
+        }
+      }
+    } catch (e) {}
+
     const tab = router.params?.tab;
     if (tab === '3' || tab === 'reminder') {
       setActiveTab('reminder');
@@ -50,6 +73,22 @@ const AdvicePage: React.FC = () => {
   });
 
   useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedTab = window.localStorage.getItem('advice_active_tab');
+        const savedNewId = window.localStorage.getItem('advice_new_reminder_id');
+        if (savedTab === 'reminder') {
+          setActiveTab('reminder');
+          window.localStorage.removeItem('advice_active_tab');
+        }
+        if (savedNewId) {
+          setNewReminderId(savedNewId);
+          window.localStorage.removeItem('advice_new_reminder_id');
+          setTimeout(() => setNewReminderId(null), 3000);
+        }
+      }
+    } catch (e) {}
+
     const tab = router.params?.tab;
     if (tab === '3' || tab === 'reminder') {
       setActiveTab('reminder');
@@ -366,10 +405,18 @@ const AdvicePage: React.FC = () => {
         </View>
       ) : (
         reminders.map((reminder) => (
-          <View key={reminder.id} className={styles.reminderCard}>
+          <View
+            key={reminder.id}
+            className={`${styles.reminderCard} ${newReminderId === reminder.id ? styles.newReminder : ''}`}
+          >
             <View className={styles.reminderHeader}>
               <View>
-                <Text className={styles.reminderTitle}>{reminder.title}</Text>
+                <Text className={styles.reminderTitle}>
+                  {reminder.title}
+                  {newReminderId === reminder.id && (
+                    <Text className={styles.newBadge}> 新</Text>
+                  )}
+                </Text>
               </View>
               <View
                 className={`${styles.switch} ${reminder.enabled ? styles.active : ''}`}

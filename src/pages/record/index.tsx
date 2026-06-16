@@ -97,11 +97,46 @@ const RecordPage: React.FC = () => {
       return recording.url;
     }
     if (recording.url && recording.url.startsWith('data:')) {
-      audioUrlRef.current.set(recording.id, recording.url);
-      return recording.url;
+      try {
+        const byteString = atob(recording.url.split(',')[1]);
+        const mimeString = recording.url.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: mimeString });
+        const blobUrl = URL.createObjectURL(blob);
+        audioUrlRef.current.set(recording.id, blobUrl);
+        return blobUrl;
+      } catch (e) {
+        console.error('[RecordPage] Error converting base64 to blob:', e);
+        return null;
+      }
     }
     return null;
   };
+
+  useEffect(() => {
+    recordings.forEach((r) => {
+      if (r.url && r.url.startsWith('data:') && !audioUrlRef.current.has(r.id)) {
+        try {
+          const byteString = atob(r.url.split(',')[1]);
+          const mimeString = r.url.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          const blobUrl = URL.createObjectURL(blob);
+          audioUrlRef.current.set(r.id, blobUrl);
+        } catch (e) {
+          console.error('[RecordPage] Error preloading recording:', r.id, e);
+        }
+      }
+    });
+  }, [recordings]);
 
   const handleStartRecord = async () => {
     try {
@@ -134,29 +169,43 @@ const RecordPage: React.FC = () => {
       mediaRecorder.onstop = () => {
         try {
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const audioUrl = URL.createObjectURL(blob);
+          const blobUrl = URL.createObjectURL(blob);
 
-          const newRecording: Recording = {
-            id: generateId(),
-            userId: (state.currentUser || mockUserA).id,
-            date: formatDate(new Date(), 'YYYY-MM-DD'),
-            startTime: formatDate(new Date(Date.now() - recordingTime * 1000), 'HH:mm'),
-            endTime: formatDate(new Date(), 'HH:mm'),
-            duration: recordingTime,
-            url: audioUrl,
-            markers: [],
-            createdAt: new Date().toISOString(),
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            try {
+              const base64Data = reader.result as string;
+              const newRecording: Recording = {
+                id: generateId(),
+                userId: (state.currentUser || mockUserA).id,
+                date: formatDate(new Date(), 'YYYY-MM-DD'),
+                startTime: formatDate(new Date(Date.now() - recordingTime * 1000), 'HH:mm'),
+                endTime: formatDate(new Date(), 'HH:mm'),
+                duration: recordingTime,
+                url: base64Data,
+                markers: [],
+                createdAt: new Date().toISOString(),
+              };
+
+              audioUrlRef.current.set(newRecording.id, blobUrl);
+              dispatch({ type: 'ADD_RECORDING', payload: newRecording });
+
+              if (streamRef.current) {
+                streamRef.current.getTracks().forEach((t) => t.stop());
+                streamRef.current = null;
+              }
+
+              Taro.showToast({ title: '录音已保存', icon: 'success' });
+            } catch (e) {
+              console.error('[RecordPage] Error saving recording base64:', e);
+              Taro.showToast({ title: '保存录音失败', icon: 'none' });
+            }
           };
-
-          audioUrlRef.current.set(newRecording.id, audioUrl);
-          dispatch({ type: 'ADD_RECORDING', payload: newRecording });
-
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach((t) => t.stop());
-            streamRef.current = null;
-          }
-
-          Taro.showToast({ title: '录音已保存', icon: 'success' });
+          reader.onerror = () => {
+            console.error('[RecordPage] Error reading blob to base64');
+            Taro.showToast({ title: '保存录音失败', icon: 'none' });
+          };
+          reader.readAsDataURL(blob);
         } catch (e) {
           console.error('[RecordPage] Error saving recording:', e);
           Taro.showToast({ title: '保存录音失败', icon: 'none' });

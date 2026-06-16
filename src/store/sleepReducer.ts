@@ -60,11 +60,6 @@ const tryGenerateTodayReport = (state: SleepState): SleepState => {
   const userAId = state.currentUser.id;
   const userBId = state.partner.id;
 
-  const existingReport = state.reports.find(
-    (r) => r.date === today && r.userAId === userAId && r.userBId === userBId
-  );
-  if (existingReport) return state;
-
   const todayForms = state.forms.filter((f) => f.date === today);
   const formA = todayForms.find((f) => f.userId === userAId);
   const formB = todayForms.find((f) => f.userId === userBId);
@@ -72,9 +67,20 @@ const tryGenerateTodayReport = (state: SleepState): SleepState => {
   if (!formA || !formB) return state;
 
   const report: MergeReport = generateReport(state.currentUser, state.partner, formA, formB);
+
+  const existingTodayReportIndex = state.reports.findIndex(
+    (r) => r.date === today && r.userAId === userAId && r.userBId === userBId
+  );
+
+  let newReports = [...state.reports];
+  if (existingTodayReportIndex >= 0) {
+    newReports.splice(existingTodayReportIndex, 1);
+  }
+  newReports = [report, ...newReports];
+
   return {
     ...state,
-    reports: [report, ...state.reports],
+    reports: newReports,
     suggestions: report.suggestions.length > 0 ? report.suggestions : state.suggestions,
   };
 };

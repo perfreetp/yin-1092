@@ -85,15 +85,24 @@ const ReportDetailPage: React.FC = () => {
             time: '09:00',
             enabled: true,
             repeat: 'once',
+            createdAt: new Date().toISOString(),
           };
           dispatch({ type: 'ADD_REMINDER', payload: reminder });
+
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('advice_active_tab', 'reminder');
+              window.localStorage.setItem('advice_new_reminder_id', reminder.id);
+            }
+          } catch (e) {}
+
           Taro.showToast({
             title: '已创建复测提醒',
             icon: 'success',
           });
           setTimeout(() => {
             Taro.switchTab({ url: '/pages/advice/index' });
-          }, 1000);
+          }, 800);
         }
       },
     });

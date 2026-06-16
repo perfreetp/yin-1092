@@ -24,12 +24,26 @@ const ObservePage: React.FC = () => {
   const currentUser = state.currentUser || mockUserA;
   const partner = state.partner || mockUserB;
 
+  const getTimeValue = (item: any): number => {
+    if (item.createdAt) {
+      return new Date(item.createdAt).getTime();
+    }
+    if (item.updatedAt) {
+      return new Date(item.updatedAt).getTime();
+    }
+    return new Date(item.date).getTime();
+  };
+
   const myForms = useMemo<SleepForm[]>(() => {
-    return state.forms.filter((f) => f.userId === currentUser.id);
+    return state.forms
+      .filter((f) => f.userId === currentUser.id)
+      .sort((a, b) => getTimeValue(b) - getTimeValue(a));
   }, [state.forms, currentUser.id]);
 
   const partnerObserveForms = useMemo<SleepForm[]>(() => {
-    return state.forms.filter((f) => f.userId === partner.id);
+    return state.forms
+      .filter((f) => f.userId === partner.id)
+      .sort((a, b) => getTimeValue(b) - getTimeValue(a));
   }, [state.forms, partner.id]);
 
   const latestMyForm = useMemo<SleepForm | null>(() => {
@@ -37,11 +51,11 @@ const ObservePage: React.FC = () => {
   }, [myForms]);
 
   const recordings = useMemo<Recording[]>(() => {
-    return state.recordings;
+    return [...state.recordings].sort((a, b) => getTimeValue(b) - getTimeValue(a));
   }, [state.recordings]);
 
   const historyRecords = useMemo<HistoryRecord[]>(() => {
-    const records: HistoryRecord[] = [];
+    const records: (HistoryRecord & { _time: number })[] = [];
     state.forms.forEach((f) => {
       records.push({
         id: 'form-' + f.id,
@@ -50,6 +64,7 @@ const ObservePage: React.FC = () => {
         title: `${f.userId === currentUser.id ? currentUser.name : partner.name} 填写了睡眠观察`,
         description: `鼾声${f.snoreLevel}级 · 憋醒${f.wakeUpChoked}次 · 睡眠质量${f.sleepQuality}星`,
         hasRisk: f.snoreLevel >= 4 || f.wakeUpChoked >= 2,
+        _time: getTimeValue(f),
       });
     });
     state.recordings.forEach((r) => {
@@ -60,6 +75,7 @@ const ObservePage: React.FC = () => {
         title: `录制了夜间录音`,
         description: `时长${formatTime(r.duration)} · 标记${r.markers.length}处异常`,
         hasRisk: r.markers.length > 0,
+        _time: getTimeValue(r),
       });
     });
     state.reports.forEach((r) => {
@@ -70,9 +86,12 @@ const ObservePage: React.FC = () => {
         title: `生成了双人睡眠报告`,
         description: `综合评分${r.analysis.overallScore}分 · 风险${r.risks.length}项`,
         hasRisk: r.analysis.riskLevel !== 'low',
+        _time: getTimeValue(r),
       });
     });
-    return records.sort((a, b) => b.date.localeCompare(a.date));
+    return records
+      .sort((a, b) => b._time - a._time)
+      .map(({ _time, ...rest }) => rest);
   }, [state.forms, state.recordings, state.reports, currentUser.name, partner.name]);
 
   const handleTabChange = (tab: TabType) => {

@@ -142,6 +142,7 @@ export interface RetestReminder {
   time: string;
   enabled: boolean;
   repeat: 'once' | 'daily' | 'weekly';
+  createdAt?: string;
 }
 
 // 录音记录
