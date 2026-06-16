@@ -12,19 +12,25 @@ export const calculateSnoreConsistency = (
   userAForm: SleepForm,
   userBForm: SleepForm
 ): number => {
-  const aSnore = userAForm.snoreLevel;
-  const bObserveA = userBForm.observeSnoreLevel || aSnore;
+  const aSnore = Number(userAForm?.snoreLevel) || 1;
+  const bObserveA = Number(userBForm?.observeSnoreLevel) || aSnore;
   const diff = Math.abs(aSnore - bObserveA);
   return Math.max(0, 100 - diff * 20);
 };
 
 export const analyzeRisk = (form: SleepForm): 'low' | 'medium' | 'high' => {
+  if (!form) return 'low';
   let score = 0;
-  if (form.snoreLevel >= 4) score += 2;
-  if (form.wakeUpChoked >= 2) score += 3;
-  if (form.nightWakeCount >= 3) score += 1;
-  if (form.energyLevel <= 2) score += 1;
-  if (form.sleepQuality <= 2) score += 2;
+  const snoreLevel = Number(form.snoreLevel) || 1;
+  const wakeUpChoked = Number(form.wakeUpChoked) || 0;
+  const nightWakeCount = Number(form.nightWakeCount) || 0;
+  const energyLevel = Number(form.energyLevel) || 3;
+  const sleepQuality = Number(form.sleepQuality) || 3;
+  if (snoreLevel >= 4) score += 2;
+  if (wakeUpChoked >= 2) score += 3;
+  if (nightWakeCount >= 3) score += 1;
+  if (energyLevel <= 2) score += 1;
+  if (sleepQuality <= 2) score += 2;
 
   if (score >= 5) return 'high';
   if (score >= 3) return 'medium';
@@ -57,14 +63,21 @@ export const generateAnalysis = (
   userAForm: SleepForm,
   userBForm: SleepForm
 ): ReportAnalysis => {
+  if (!userAForm) userAForm = {} as SleepForm;
+  if (!userBForm) userBForm = {} as SleepForm;
+
   const snoreConsistency = calculateSnoreConsistency(userAForm, userBForm);
-  const sleepQualityAvg = (userAForm.sleepQuality + userBForm.sleepQuality) / 2;
+  const sleepQualityAvg = (
+    (Number(userAForm.sleepQuality) || 3) + (Number(userBForm.sleepQuality) || 3)
+  ) / 2;
   const totalWakeEvents =
-    userAForm.wakeUpChoked +
-    userBForm.wakeUpChoked +
-    userAForm.nightWakeCount +
-    userBForm.nightWakeCount;
-  const abnormalEventsCount = (userAForm.abnormalMarkers?.length || 0) + (userBForm.abnormalMarkers?.length || 0);
+    (Number(userAForm.wakeUpChoked) || 0) +
+    (Number(userBForm.wakeUpChoked) || 0) +
+    (Number(userAForm.nightWakeCount) || 0) +
+    (Number(userBForm.nightWakeCount) || 0);
+  const abnormalEventsCount =
+    (userAForm.abnormalMarkers?.length || 0) +
+    (userBForm.abnormalMarkers?.length || 0);
 
   const riskA = analyzeRisk(userAForm);
   const riskB = analyzeRisk(userBForm);
@@ -72,21 +85,28 @@ export const generateAnalysis = (
   if (riskA === 'high' || riskB === 'high') riskLevel = 'high';
   else if (riskA === 'medium' || riskB === 'medium') riskLevel = 'medium';
 
+  const snoreA = Number(userAForm.snoreLevel) || 1;
+  const snoreB = Number(userBForm.snoreLevel) || 1;
+  const observeSnoreB = Number(userBForm.observeSnoreLevel) || snoreA;
+  const chokedA = Number(userAForm.wakeUpChoked) || 0;
+  const chokedB = Number(userBForm.wakeUpChoked) || 0;
+  const observeChokedB = Number(userBForm.observeWakeUpChoked) || chokedA;
+
   const overallScore = Math.max(
     0,
     Math.min(
       100,
       Math.round(
         sleepQualityAvg * 15 +
-          (5 - (userAForm.wakeUpChoked + userBForm.wakeUpChoked)) * 10 +
+          Math.max(0, 5 - (chokedA + chokedB)) * 10 +
           snoreConsistency * 0.3 +
-          (5 - (userAForm.snoreLevel + userBForm.snoreLevel) / 2) * 10
+          Math.max(0, 5 - (snoreA + snoreB) / 2) * 10
       )
     )
   );
 
-  const snoreDiff = Math.abs(userAForm.snoreLevel - (userBForm.observeSnoreLevel || userAForm.snoreLevel));
-  const wakeDiff = Math.abs(userAForm.wakeUpChoked - (userBForm.observeWakeUpChoked || userAForm.wakeUpChoked));
+  const snoreDiff = Math.abs(snoreA - observeSnoreB);
+  const wakeDiff = Math.abs(chokedA - observeChokedB);
 
   let notes = '';
   if (snoreDiff >= 2) notes += '双方对鼾声的感知存在较大差异，建议参考录音数据。';
@@ -99,7 +119,7 @@ export const generateAnalysis = (
     totalWakeEvents,
     abnormalEventsCount,
     riskLevel,
-    overallScore,
+    overallScore: Number.isFinite(overallScore) ? overallScore : 60,
     differences: {
       snoreDiff,
       wakeDiff,
@@ -115,44 +135,47 @@ export const generateRisks = (
 ): RiskTip[] => {
   const risks: RiskTip[] = [];
 
-  // 检查用户A的风险
-  if (userAForm.snoreLevel >= 4) {
+  const aSnore = Number(userAForm?.snoreLevel) || 1;
+  const aChoked = Number(userAForm?.wakeUpChoked) || 0;
+  const bSnore = Number(userBForm?.snoreLevel) || 1;
+  const bChoked = Number(userBForm?.wakeUpChoked) || 0;
+
+  if (aSnore >= 4) {
     risks.push({
       id: generateId(),
       level: 'warning',
       title: '鼾声较大',
-      description: `自我评估鼾声程度为 ${userAForm.snoreLevel}/5，建议关注睡眠呼吸状况。`,
+      description: `自我评估鼾声程度为 ${aSnore}/5，建议关注睡眠呼吸状况。`,
       source: 'userA',
     });
   }
 
-  if (userAForm.wakeUpChoked >= 2) {
+  if (aChoked >= 2) {
     risks.push({
       id: generateId(),
       level: 'danger',
       title: '夜间憋醒频繁',
-      description: `报告夜间憋醒 ${userAForm.wakeUpChoked} 次，可能存在睡眠呼吸暂停风险。`,
+      description: `报告夜间憋醒 ${aChoked} 次，可能存在睡眠呼吸暂停风险。`,
       source: 'userA',
     });
   }
 
-  // 检查用户B的风险
-  if (userBForm.snoreLevel >= 4) {
+  if (bSnore >= 4) {
     risks.push({
       id: generateId(),
       level: 'warning',
       title: '鼾声较大',
-      description: `自我评估鼾声程度为 ${userBForm.snoreLevel}/5，建议关注睡眠呼吸状况。`,
+      description: `自我评估鼾声程度为 ${bSnore}/5，建议关注睡眠呼吸状况。`,
       source: 'userB',
     });
   }
 
-  if (userBForm.wakeUpChoked >= 2) {
+  if (bChoked >= 2) {
     risks.push({
       id: generateId(),
       level: 'danger',
       title: '夜间憋醒频繁',
-      description: `报告夜间憋醒 ${userBForm.wakeUpChoked} 次，可能存在睡眠呼吸暂停风险。`,
+      description: `报告夜间憋醒 ${bChoked} 次，可能存在睡眠呼吸暂停风险。`,
       source: 'userB',
     });
   }

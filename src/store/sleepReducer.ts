@@ -76,7 +76,7 @@ const tryGenerateTodayReport = (state: SleepState): SleepState => {
     return t > lt ? f : latest;
   });
 
-  const report: MergeReport = generateReport(state.currentUser, state.partner, formA, formB);
+  const report: MergeReport = generateReport(formA, formB);
 
   const existingTodayReportIndex = state.reports.findIndex(
     (r) => r.date === today && r.userAId === userAId && r.userBId === userBId

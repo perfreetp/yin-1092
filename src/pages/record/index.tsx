@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Textarea, Slider } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useRouter } from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
 import { mockRecordings, mockUserA } from '@/data/mockData';
 import { generateId, formatDate } from '@/utils/date';
@@ -15,6 +15,9 @@ const typeOptions = [
 
 const RecordPage: React.FC = () => {
   const { state, dispatch } = useSleep();
+  const router = useRouter();
+  const targetRecordingId = router.params?.id;
+
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -24,6 +27,10 @@ const RecordPage: React.FC = () => {
   const [markerType, setMarkerType] = useState<'snore' | 'pause' | 'other'>('snore');
   const [markerDesc, setMarkerDesc] = useState('');
   const [markerTimeSeconds, setMarkerTimeSeconds] = useState(0);
+  const [expandedRecordingId, setExpandedRecordingId] = useState<string | null>(null);
+  const [highlightedRecordingId, setHighlightedRecordingId] = useState<string | null>(null);
+  const [notFoundRecording, setNotFoundRecording] = useState(false);
+  const [notFoundRecordingId, setNotFoundRecordingId] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -31,11 +38,39 @@ const RecordPage: React.FC = () => {
   const audioUrlRef = useRef<Map<string, string>>(new Map());
   const streamRef = useRef<MediaStream | null>(null);
   const recordingTimeRef = useRef<number>(0);
+  const scrollViewRef = useRef<any>(null);
 
   const recordings = state.recordings.length > 0 ? state.recordings : mockRecordings;
 
   const totalDuration = recordings.reduce((sum, r) => sum + r.duration, 0);
   const totalMarkers = recordings.reduce((sum, r) => sum + r.markers.length, 0);
+
+  useEffect(() => {
+    if (!targetRecordingId) return;
+    const found = recordings.find((r) => r.id === targetRecordingId);
+    if (found) {
+      setExpandedRecordingId(found.id);
+      setHighlightedRecordingId(found.id);
+      setTimeout(() => setHighlightedRecordingId(null), 4000);
+      setTimeout(() => {
+        try {
+          const el = document.getElementById('recording-card-' + found.id);
+          if (el && typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } catch (e) {}
+      }, 100);
+    } else {
+      setNotFoundRecording(true);
+      setNotFoundRecordingId(targetRecordingId);
+      Taro.showModal({
+        title: '录音不存在',
+        content: '你要找的录音可能已被删除，查看其他录音？',
+        confirmText: '好的',
+        showCancel: false,
+      });
+    }
+  }, [targetRecordingId, recordings]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -540,7 +575,20 @@ const RecordPage: React.FC = () => {
           </View>
         ) : (
           recordings.map((recording) => (
-            <View key={recording.id} className={styles.recordingCard}>
+            <View
+              key={recording.id}
+              id={`recording-card-${recording.id}`}
+              className={`${styles.recordingCard} ${
+                highlightedRecordingId === recording.id ? styles.highlighted : ''
+              } ${expandedRecordingId === recording.id ? styles.expanded : ''}`}
+              onClick={() => {
+                if (expandedRecordingId === recording.id) {
+                  setExpandedRecordingId(null);
+                } else {
+                  setExpandedRecordingId(recording.id);
+                }
+              }}
+            >
               <View className={styles.cardHeader}>
                 <View className={styles.left}>
                   <Text className={styles.date}>
@@ -558,7 +606,7 @@ const RecordPage: React.FC = () => {
                 </View>
               </View>
 
-              <View className={styles.waveform}>
+              <View className={styles.waveform} onClick={(e) => e.stopPropagation()}>
                 {getWaveformData(recording).map((bar, i) => (
                   <View
                     key={i}
@@ -573,11 +621,14 @@ const RecordPage: React.FC = () => {
               <View className={styles.controls}>
                 <View
                   className={styles.playBtn}
-                  onClick={() => handlePlay(recording)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlay(recording);
+                  }}
                 >
                   {playingId === recording.id ? '⏸' : '▶'}
                 </View>
-                <View className={styles.progress}>
+                <View className={styles.progress} onClick={(e) => e.stopPropagation()}>
                   <Slider
                     min={0}
                     max={recording.duration}
@@ -605,16 +656,28 @@ const RecordPage: React.FC = () => {
                     <Text>{formatTimeFull(recording.duration)}</Text>
                   </View>
                 </View>
-                <View className={styles.markBtn} onClick={() => handleAddMarker(recording.id)}>
+                <View
+                  className={styles.markBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddMarker(recording.id);
+                  }}
+                >
                   🏷️
                 </View>
               </View>
 
-              {recording.markers.length > 0 && (
-                <View className={styles.markers}>
+              {recording.markers.length > 0 && expandedRecordingId === recording.id && (
+                <View className={styles.markers} onClick={(e) => e.stopPropagation()}>
                   <Text className={styles.markersTitle}>
                     异常标记 ({recording.markers.length})
-                    <Text className={styles.addBtn} onClick={() => handleAddMarker(recording.id)}>
+                    <Text
+                      className={styles.addBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddMarker(recording.id);
+                      }}
+                    >
                       + 添加
                     </Text>
                   </Text>
@@ -628,7 +691,10 @@ const RecordPage: React.FC = () => {
                         <Text className={styles.desc}>{marker.description}</Text>
                         <View
                           className={styles.playMarkerBtn}
-                          onClick={() => handlePlayMarker(recording, marker)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlayMarker(recording, marker);
+                          }}
                         >
                           ▶
                         </View>
@@ -638,23 +704,37 @@ const RecordPage: React.FC = () => {
                 </View>
               )}
 
-              <View className={styles.actions}>
-                <View
-                  className={`${styles.actionBtn} ${styles.primary}`}
-                  onClick={() => handleAddMarker(recording.id)}
-                >
-                  + 添加标记
+              {expandedRecordingId === recording.id && (
+                <View className={styles.actions}>
+                  <View
+                    className={`${styles.actionBtn} ${styles.primary}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddMarker(recording.id);
+                    }}
+                  >
+                    + 添加标记
+                  </View>
+                  <View
+                    className={styles.actionBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoToForm();
+                    }}
+                  >
+                    关联报告
+                  </View>
+                  <View
+                    className={`${styles.actionBtn} ${styles.danger}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteRecording(recording.id);
+                    }}
+                  >
+                    删除
+                  </View>
                 </View>
-                <View className={styles.actionBtn} onClick={handleGoToForm}>
-                  关联报告
-                </View>
-                <View
-                  className={`${styles.actionBtn} ${styles.danger}`}
-                  onClick={() => handleDeleteRecording(recording.id)}
-                >
-                  删除
-                </View>
-              </View>
+              )}
             </View>
           ))
         )}
