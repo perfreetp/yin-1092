@@ -30,6 +30,7 @@ const RecordPage: React.FC = () => {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<Map<string, string>>(new Map());
   const streamRef = useRef<MediaStream | null>(null);
+  const recordingTimeRef = useRef<number>(0);
 
   const recordings = state.recordings.length > 0 ? state.recordings : mockRecordings;
 
@@ -40,7 +41,11 @@ const RecordPage: React.FC = () => {
     let interval: NodeJS.Timeout;
     if (isRecording) {
       interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setRecordingTime((prev) => {
+          const next = prev + 1;
+          recordingTimeRef.current = next;
+          return next;
+        });
       }, 1000);
     }
     return () => {
@@ -168,6 +173,7 @@ const RecordPage: React.FC = () => {
 
       mediaRecorder.onstop = () => {
         try {
+          const duration = recordingTimeRef.current;
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           const blobUrl = URL.createObjectURL(blob);
 
@@ -179,9 +185,9 @@ const RecordPage: React.FC = () => {
                 id: generateId(),
                 userId: (state.currentUser || mockUserA).id,
                 date: formatDate(new Date(), 'YYYY-MM-DD'),
-                startTime: formatDate(new Date(Date.now() - recordingTime * 1000), 'HH:mm'),
+                startTime: formatDate(new Date(Date.now() - duration * 1000), 'HH:mm'),
                 endTime: formatDate(new Date(), 'HH:mm'),
-                duration: recordingTime,
+                duration: duration,
                 url: base64Data,
                 markers: [],
                 createdAt: new Date().toISOString(),
@@ -216,6 +222,7 @@ const RecordPage: React.FC = () => {
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
+      recordingTimeRef.current = 0;
       Taro.showToast({ title: '开始录音', icon: 'none' });
     } catch (e) {
       console.error('[RecordPage] Error starting recording:', e);
@@ -237,7 +244,7 @@ const RecordPage: React.FC = () => {
     }
     setIsRecording(false);
     mediaRecorderRef.current = null;
-  }, [recordingTime, dispatch, state.currentUser]);
+  }, [dispatch, state.currentUser]);
 
   const handlePlay = async (recording: Recording) => {
     const audioUrl = getAudioUrl(recording);
@@ -365,17 +372,43 @@ const RecordPage: React.FC = () => {
     }
 
     try {
-      if (!audioElementRef.current || playingId !== recording.id) {
-        handlePlay(recording);
-        setTimeout(() => {
-          if (audioElementRef.current) {
-            audioElementRef.current.currentTime = marker.timestamp;
-          }
-        }, 300);
-      } else if (audioElementRef.current) {
+      if (playingId === recording.id && audioElementRef.current) {
         audioElementRef.current.currentTime = marker.timestamp;
+        setPlayingTime(marker.timestamp);
+        return;
       }
+
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+      }
+
+      const audio = new Audio(audioUrl);
+      audioElementRef.current = audio;
+      setPlayingId(recording.id);
       setPlayingTime(marker.timestamp);
+
+      audio.oncanplaythrough = () => {
+        audio.currentTime = marker.timestamp;
+        audio.play().catch((e) => {
+          console.error('[RecordPage] Error playing from marker:', e);
+        });
+      };
+
+      audio.ontimeupdate = () => {
+        setPlayingTime(Math.floor(audio.currentTime));
+      };
+
+      audio.onended = () => {
+        setPlayingId(null);
+        setPlayingTime(0);
+      };
+
+      audio.onerror = () => {
+        Taro.showToast({ title: '播放失败', icon: 'none' });
+        setPlayingId(null);
+      };
+
+      audio.load();
     } catch (e) {
       console.error('[RecordPage] Error playing marker:', e);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
@@ -20,13 +20,25 @@ import styles from './index.module.scss';
 
 const ReportDetailPage: React.FC = () => {
   const { state, dispatch } = useSleep();
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(
-    mockReport.suggestions || []
-  );
+  const router = useRouter();
+  const reportId = router.params?.id;
 
   const report = useMemo((): MergeReport => {
-    return state.reports.length > 0 ? state.reports[0] : mockReport;
-  }, [state.reports]);
+    if (reportId && state.reports.length > 0) {
+      const found = state.reports.find((r) => r.id === reportId);
+      if (found) return found;
+    }
+    if (state.reports.length > 0) {
+      return state.reports[0];
+    }
+    return mockReport;
+  }, [state.reports, reportId]);
+
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+
+  useEffect(() => {
+    setSuggestions(report.suggestions || mockReport.suggestions || []);
+  }, [report]);
 
   const userA = state.currentUser || mockUserA;
   const userB = state.partner || mockUserB;

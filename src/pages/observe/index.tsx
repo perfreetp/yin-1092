@@ -113,6 +113,18 @@ const ObservePage: React.FC = () => {
     Taro.navigateTo({ url: '/pages/record/index?id=' + recordingId });
   };
 
+  const handleHistoryClick = (record: HistoryRecord) => {
+    if (record.type === 'report') {
+      const reportId = record.id.replace('report-', '');
+      Taro.navigateTo({ url: '/pages/report-detail/index?id=' + reportId });
+    } else if (record.type === 'recording') {
+      const recordingId = record.id.replace('rec-', '');
+      Taro.navigateTo({ url: '/pages/record/index?id=' + recordingId });
+    } else if (record.type === 'form') {
+      Taro.navigateTo({ url: '/pages/form/index' });
+    }
+  };
+
   const renderMyForms = () => {
     if (myForms.length === 0) {
       return (
@@ -278,7 +290,11 @@ const ObservePage: React.FC = () => {
     return (
       <View className={styles.historyList}>
         {historyRecords.map((record) => (
-          <View key={record.id} className={styles.historyItem}>
+          <View
+            key={record.id}
+            className={styles.historyItem}
+            onClick={() => handleHistoryClick(record)}
+          >
             <View className={`${styles.historyDot} ${styles[record.type]}`}>
               <Text>{record.type === 'form' ? '📝' : record.type === 'recording' ? '🎙️' : '📊'}</Text>
             </View>
@@ -287,6 +303,7 @@ const ObservePage: React.FC = () => {
               <Text className={styles.historyDesc}>{record.description}</Text>
               <Text className={styles.historyTime}>{record.date}</Text>
             </View>
+            <Text className={styles.historyArrow}>›</Text>
           </View>
         ))}
       </View>

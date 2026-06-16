@@ -27,19 +27,24 @@ const ReportPage: React.FC = () => {
   const currentUser = state.currentUser || mockUserA;
   const partner = state.partner || mockUserB;
 
-  const latestReport: MergeReport = useMemo(() => {
+  const allReports = useMemo<MergeReport[]>(() => {
     if (state.reports.length > 0) {
-      return state.reports[0];
+      return [...state.reports].sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+        return bTime - aTime;
+      });
     }
-    return mockReport;
+    return mockReports;
   }, [state.reports]);
 
+  const latestReport: MergeReport = useMemo(() => {
+    return allReports[0] || mockReport;
+  }, [allReports]);
+
   const historyReports = useMemo<MergeReport[]>(() => {
-    if (state.reports.length > 1) {
-      return state.reports.slice(1);
-    }
-    return mockReports.slice(1);
-  }, [state.reports]);
+    return allReports.slice(1);
+  }, [allReports]);
 
   const formsReady = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
