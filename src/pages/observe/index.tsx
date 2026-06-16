@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
 import {
   mockUserA,
   mockUserB,
-  mockFormA,
-  mockForms,
-  mockRecordings,
   mockHistoryRecords,
 } from '@/data/mockData';
 import SleepCard from '@/components/SleepCard';
@@ -15,36 +12,78 @@ import UserAvatar from '@/components/UserAvatar';
 import TagBadge from '@/components/TagBadge';
 import { formatTime } from '@/utils/date';
 import { getSnoreLevelText } from '@/utils/analysis';
+import { SleepForm, Recording, HistoryRecord } from '@/types/sleep';
 import styles from './index.module.scss';
 
 type TabType = 'my' | 'partner' | 'recording' | 'history';
 
 const ObservePage: React.FC = () => {
-  const { state, dispatch } = useSleep();
+  const { state } = useSleep();
   const [activeTab, setActiveTab] = useState<TabType>('my');
 
-  useEffect(() => {
-    console.log('[ObservePage] Component mounted, activeTab:', activeTab);
-    if (!state.currentUser) {
-      dispatch({ type: 'SET_USER', payload: mockUserA });
-      dispatch({ type: 'SET_PARTNER', payload: mockUserB });
-      dispatch({ type: 'SET_FORMS', payload: mockForms });
-      dispatch({ type: 'SET_RECORDINGS', payload: mockRecordings });
-    }
-  }, [dispatch, state.currentUser, activeTab]);
+  const currentUser = state.currentUser || mockUserA;
+  const partner = state.partner || mockUserB;
+
+  const myForms = useMemo<SleepForm[]>(() => {
+    return state.forms.filter((f) => f.userId === currentUser.id);
+  }, [state.forms, currentUser.id]);
+
+  const partnerObserveForms = useMemo<SleepForm[]>(() => {
+    return state.forms.filter((f) => f.userId === partner.id);
+  }, [state.forms, partner.id]);
+
+  const latestMyForm = useMemo<SleepForm | null>(() => {
+    return myForms.length > 0 ? myForms[0] : null;
+  }, [myForms]);
+
+  const recordings = useMemo<Recording[]>(() => {
+    return state.recordings;
+  }, [state.recordings]);
+
+  const historyRecords = useMemo<HistoryRecord[]>(() => {
+    const records: HistoryRecord[] = [];
+    state.forms.forEach((f) => {
+      records.push({
+        id: 'form-' + f.id,
+        date: f.date,
+        type: 'form',
+        title: `${f.userId === currentUser.id ? currentUser.name : partner.name} 填写了睡眠观察`,
+        description: `鼾声${f.snoreLevel}级 · 憋醒${f.wakeUpChoked}次 · 睡眠质量${f.sleepQuality}星`,
+        hasRisk: f.snoreLevel >= 4 || f.wakeUpChoked >= 2,
+      });
+    });
+    state.recordings.forEach((r) => {
+      records.push({
+        id: 'rec-' + r.id,
+        date: r.date,
+        type: 'recording',
+        title: `录制了夜间录音`,
+        description: `时长${formatTime(r.duration)} · 标记${r.markers.length}处异常`,
+        hasRisk: r.markers.length > 0,
+      });
+    });
+    state.reports.forEach((r) => {
+      records.push({
+        id: 'report-' + r.id,
+        date: r.date,
+        type: 'report',
+        title: `生成了双人睡眠报告`,
+        description: `综合评分${r.analysis.overallScore}分 · 风险${r.risks.length}项`,
+        hasRisk: r.analysis.riskLevel !== 'low',
+      });
+    });
+    return records.sort((a, b) => b.date.localeCompare(a.date));
+  }, [state.forms, state.recordings, state.reports, currentUser.name, partner.name]);
 
   const handleTabChange = (tab: TabType) => {
-    console.log('[ObservePage] Switch tab to:', tab);
     setActiveTab(tab);
   };
 
   const handleAddRecord = () => {
-    console.log('[ObservePage] Navigate to form page');
     Taro.navigateTo({ url: '/pages/form/index' });
   };
 
   const handleFormClick = (formId: string) => {
-    console.log('[ObservePage] Click form:', formId);
     Taro.showToast({
       title: '查看详情',
       icon: 'none',
@@ -52,12 +91,8 @@ const ObservePage: React.FC = () => {
   };
 
   const handleRecordingClick = (recordingId: string) => {
-    console.log('[ObservePage] Click recording:', recordingId);
     Taro.navigateTo({ url: '/pages/record/index?id=' + recordingId });
   };
-
-  const myForms = mockForms.filter((f) => f.userId === mockUserA.id);
-  const partnerObserveForms = mockForms.filter((f) => f.userId === mockUserB.id);
 
   const renderMyForms = () => {
     if (myForms.length === 0) {
@@ -65,6 +100,7 @@ const ObservePage: React.FC = () => {
         <View className={styles.emptyState}>
           <Text className={styles.emptyIcon}>📝</Text>
           <Text className={styles.emptyText}>暂无填报记录</Text>
+          <Text className={styles.emptyDesc}>点击右下角按钮开始填写</Text>
         </View>
       );
     }
@@ -75,9 +111,9 @@ const ObservePage: React.FC = () => {
           <SleepCard
             key={form.id}
             form={form}
-            userRole="userA"
-            userName={mockUserA.name}
-            userAvatar={mockUserA.avatar}
+            userRole={currentUser.role || 'userA'}
+            userName={currentUser.name}
+            userAvatar={currentUser.avatar}
             onClick={() => handleFormClick(form.id)}
           />
         ))}
@@ -91,6 +127,7 @@ const ObservePage: React.FC = () => {
         <View className={styles.emptyState}>
           <Text className={styles.emptyIcon}>👀</Text>
           <Text className={styles.emptyText}>暂无对方观察记录</Text>
+          <Text className={styles.emptyDesc}>等待 {partner.name} 填写观察</Text>
         </View>
       );
     }
@@ -102,13 +139,13 @@ const ObservePage: React.FC = () => {
             <View className={styles.observeHeader}>
               <View className={styles.observeUser}>
                 <UserAvatar
-                  src={mockUserB.avatar}
-                  name={mockUserB.name}
-                  role="userB"
+                  src={partner.avatar}
+                  name={partner.name}
+                  role={partner.role || 'userB'}
                   size="sm"
                 />
                 <View>
-                  <Text className={styles.observeName}>{mockUserB.name} 的观察</Text>
+                  <Text className={styles.observeName}>{partner.name} 的观察</Text>
                   <Text className={styles.observeDate}>{form.date}</Text>
                 </View>
               </View>
@@ -152,18 +189,19 @@ const ObservePage: React.FC = () => {
   };
 
   const renderRecordings = () => {
-    if (mockRecordings.length === 0) {
+    if (recordings.length === 0) {
       return (
         <View className={styles.emptyState}>
           <Text className={styles.emptyIcon}>🎙️</Text>
           <Text className={styles.emptyText}>暂无录音记录</Text>
+          <Text className={styles.emptyDesc}>去录制一段夜间睡眠声音</Text>
         </View>
       );
     }
 
     return (
       <View>
-        {mockRecordings.map((recording) => (
+        {recordings.map((recording) => (
           <View
             key={recording.id}
             className={styles.recordingCard}
@@ -208,18 +246,19 @@ const ObservePage: React.FC = () => {
   };
 
   const renderHistory = () => {
-    if (mockHistoryRecords.length === 0) {
+    if (historyRecords.length === 0) {
       return (
         <View className={styles.emptyState}>
           <Text className={styles.emptyIcon}>📊</Text>
           <Text className={styles.emptyText}>暂无历史记录</Text>
+          <Text className={styles.emptyDesc}>开始使用后这里会显示操作记录</Text>
         </View>
       );
     }
 
     return (
       <View className={styles.historyList}>
-        {mockHistoryRecords.map((record) => (
+        {historyRecords.map((record) => (
           <View key={record.id} className={styles.historyItem}>
             <View className={`${styles.historyDot} ${styles[record.type]}`}>
               <Text>{record.type === 'form' ? '📝' : record.type === 'recording' ? '🎙️' : '📊'}</Text>
@@ -290,15 +329,15 @@ const ObservePage: React.FC = () => {
                   <Text className={styles.summaryLabel}>填报次数</Text>
                 </View>
                 <View className={styles.summaryItem}>
-                  <Text className={styles.summaryValue}>{mockFormA.snoreLevel}</Text>
+                  <Text className={styles.summaryValue}>{latestMyForm?.snoreLevel || '-'}</Text>
                   <Text className={styles.summaryLabel}>最新鼾声</Text>
                 </View>
                 <View className={styles.summaryItem}>
-                  <Text className={styles.summaryValue}>{mockFormA.wakeUpChoked}</Text>
+                  <Text className={styles.summaryValue}>{latestMyForm?.wakeUpChoked ?? '-'}</Text>
                   <Text className={styles.summaryLabel}>憋醒次数</Text>
                 </View>
                 <View className={styles.summaryItem}>
-                  <Text className={styles.summaryValue}>{mockFormA.sleepQuality}</Text>
+                  <Text className={styles.summaryValue}>{latestMyForm?.sleepQuality || '-'}</Text>
                   <Text className={styles.summaryLabel}>睡眠质量</Text>
                 </View>
               </View>

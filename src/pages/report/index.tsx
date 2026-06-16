@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
@@ -15,37 +15,55 @@ import {
   getSleepPositionText,
   getEnergyLevelText,
 } from '@/utils/analysis';
-import { RiskTip, Suggestion } from '@/types/sleep';
+import { RiskTip, Suggestion, MergeReport } from '@/types/sleep';
 import styles from './index.module.scss';
 
 type TimeRange = 'today' | 'week' | 'month';
 
 const ReportPage: React.FC = () => {
-  const { state, dispatch } = useSleep();
+  const { state } = useSleep();
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
 
-  useEffect(() => {
-    console.log('[ReportPage] Component mounted, timeRange:', timeRange);
-    if (!state.currentUser) {
-      dispatch({ type: 'SET_USER', payload: mockUserA });
-      dispatch({ type: 'SET_PARTNER', payload: mockUserB });
-      dispatch({ type: 'SET_REPORTS', payload: mockReports });
+  const currentUser = state.currentUser || mockUserA;
+  const partner = state.partner || mockUserB;
+
+  const latestReport: MergeReport = useMemo(() => {
+    if (state.reports.length > 0) {
+      return state.reports[0];
     }
-  }, [dispatch, state.currentUser, timeRange]);
+    return mockReport;
+  }, [state.reports]);
+
+  const historyReports = useMemo<MergeReport[]>(() => {
+    if (state.reports.length > 1) {
+      return state.reports.slice(1);
+    }
+    return mockReports.slice(1);
+  }, [state.reports]);
+
+  const formsReady = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayForms = state.forms.filter((f) => f.date === today);
+    return {
+      userA: todayForms.some((f) => f.userId === currentUser.id),
+      userB: todayForms.some((f) => f.userId === partner.id),
+    };
+  }, [state.forms, currentUser.id, partner.id]);
 
   const handleTimeChange = (range: TimeRange) => {
-    console.log('[ReportPage] Switch time range:', range);
     setTimeRange(range);
   };
 
   const handleViewDetail = (reportId: string) => {
-    console.log('[ReportPage] View report detail:', reportId);
     Taro.navigateTo({ url: '/pages/report-detail/index?id=' + reportId });
   };
 
   const handleViewAllSuggestions = () => {
-    console.log('[ReportPage] Navigate to advice page');
     Taro.switchTab({ url: '/pages/advice/index' });
+  };
+
+  const handleGoFillForm = () => {
+    Taro.navigateTo({ url: '/pages/form/index' });
   };
 
   const riskLevelText = {
@@ -54,7 +72,7 @@ const ReportPage: React.FC = () => {
     low: '低风险',
   };
 
-  const highPrioritySuggestions = mockReport.suggestions
+  const highPrioritySuggestions = latestReport.suggestions
     .filter((s) => s.priority === 'high')
     .slice(0, 3);
 
@@ -89,9 +107,9 @@ const ReportPage: React.FC = () => {
   const getSourceText = (source: string) => {
     switch (source) {
       case 'userA':
-        return `来自 ${mockUserA.name}`;
+        return `来自 ${currentUser.name}`;
       case 'userB':
-        return `来自 ${mockUserB.name}`;
+        return `来自 ${partner.name}`;
       case 'both':
         return '双方数据';
       case 'analysis':
@@ -102,11 +120,11 @@ const ReportPage: React.FC = () => {
   };
 
   const chartData = [
-    { label: '鼾声', value: mockReport.userAForm.snoreLevel, maxValue: 5, color: '#4A90D9' },
-    { label: '憋醒', value: mockReport.userAForm.wakeUpChoked, maxValue: 5, color: '#4A90D9' },
-    { label: '起夜', value: mockReport.userAForm.nightWakeCount, maxValue: 5, color: '#4A90D9' },
-    { label: '质量', value: mockReport.userAForm.sleepQuality, maxValue: 5, color: '#4A90D9' },
-    { label: '精神', value: mockReport.userAForm.energyLevel, maxValue: 5, color: '#4A90D9' },
+    { label: '鼾声', value: latestReport.userAForm.snoreLevel, maxValue: 5, color: '#4A90D9' },
+    { label: '憋醒', value: Math.min(latestReport.userAForm.wakeUpChoked, 5), maxValue: 5, color: '#4A90D9' },
+    { label: '起夜', value: Math.min(latestReport.userAForm.nightWakeCount, 5), maxValue: 5, color: '#4A90D9' },
+    { label: '质量', value: latestReport.userAForm.sleepQuality, maxValue: 5, color: '#4A90D9' },
+    { label: '精神', value: latestReport.userAForm.energyLevel, maxValue: 5, color: '#4A90D9' },
   ];
 
   return (
@@ -133,13 +151,29 @@ const ReportPage: React.FC = () => {
       </View>
 
       <View className={styles.content}>
-        <View className={styles.latestReport} onClick={() => handleViewDetail(mockReport.id)}>
+        {(!formsReady.userA || !formsReady.userB) && (
+          <View className={styles.pendingBanner}>
+            <Text className={styles.pendingIcon}>⏳</Text>
+            <View className={styles.pendingContent}>
+              <Text className={styles.pendingTitle}>等待双方完成今日填报</Text>
+              <Text className={styles.pendingDesc}>
+                {!formsReady.userA && `${currentUser.name} 还未填写 · `}
+                {!formsReady.userB && `${partner.name} 还未填写`}
+              </Text>
+            </View>
+            <View className={styles.pendingBtn} onClick={handleGoFillForm}>
+              去填写
+            </View>
+          </View>
+        )}
+
+        <View className={styles.latestReport} onClick={() => handleViewDetail(latestReport.id)}>
           <View className={styles.reportHeader}>
             <View className={styles.reportScoreSection}>
-              <Text className={styles.reportDate}>{mockReport.date} 睡眠报告</Text>
+              <Text className={styles.reportDate}>{latestReport.date} 睡眠报告</Text>
               <View className={styles.scoreRow}>
                 <View className={styles.scoreCircle}>
-                  <Text className={styles.scoreValue}>{mockReport.analysis.overallScore}</Text>
+                  <Text className={styles.scoreValue}>{latestReport.analysis.overallScore}</Text>
                 </View>
                 <View>
                   <Text className={styles.scoreLabel}>综合睡眠评分</Text>
@@ -148,9 +182,9 @@ const ReportPage: React.FC = () => {
               </View>
             </View>
             <View
-              className={`${styles.riskBadge} ${styles[mockReport.analysis.riskLevel]}`}
+              className={`${styles.riskBadge} ${styles[latestReport.analysis.riskLevel]}`}
             >
-              <Text>{riskLevelText[mockReport.analysis.riskLevel]}</Text>
+              <Text>{riskLevelText[latestReport.analysis.riskLevel]}</Text>
             </View>
           </View>
 
@@ -160,43 +194,43 @@ const ReportPage: React.FC = () => {
               <View className={`${styles.comparisonColumn} ${styles.userA}`}>
                 <View className={styles.columnHeader}>
                   <UserAvatar
-                    src={mockUserA.avatar}
-                    name={mockUserA.name}
-                    role="userA"
+                    src={currentUser.avatar}
+                    name={currentUser.name}
+                    role={currentUser.role || 'userA'}
                     size="sm"
                   />
-                  <Text className={styles.columnName}>{mockUserA.name}</Text>
+                  <Text className={styles.columnName}>{currentUser.name}</Text>
                   <Text className={styles.columnRole}>自我</Text>
                 </View>
                 <View className={styles.comparisonData}>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>鼾声</Text>
                     <Text className={styles.comparisonValue}>
-                      {getSnoreLevelText(mockReport.userAForm.snoreLevel)}
+                      {getSnoreLevelText(latestReport.userAForm.snoreLevel)}
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>憋醒</Text>
                     <Text className={styles.comparisonValue}>
-                      {mockReport.userAForm.wakeUpChoked} 次
+                      {latestReport.userAForm.wakeUpChoked} 次
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>睡姿</Text>
                     <Text className={styles.comparisonValue}>
-                      {getSleepPositionText(mockReport.userAForm.sleepPosition)}
+                      {getSleepPositionText(latestReport.userAForm.sleepPosition)}
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>起夜</Text>
                     <Text className={styles.comparisonValue}>
-                      {mockReport.userAForm.nightWakeCount} 次
+                      {latestReport.userAForm.nightWakeCount} 次
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>精神</Text>
                     <Text className={styles.comparisonValue}>
-                      {getEnergyLevelText(mockReport.userAForm.energyLevel)}
+                      {getEnergyLevelText(latestReport.userAForm.energyLevel)}
                     </Text>
                   </View>
                 </View>
@@ -205,45 +239,45 @@ const ReportPage: React.FC = () => {
               <View className={`${styles.comparisonColumn} ${styles.userB}`}>
                 <View className={styles.columnHeader}>
                   <UserAvatar
-                    src={mockUserB.avatar}
-                    name={mockUserB.name}
-                    role="userB"
+                    src={partner.avatar}
+                    name={partner.name}
+                    role={partner.role || 'userB'}
                     size="sm"
                   />
-                  <Text className={styles.columnName}>{mockUserB.name}</Text>
+                  <Text className={styles.columnName}>{partner.name}</Text>
                   <Text className={styles.columnRole}>观察</Text>
                 </View>
                 <View className={styles.comparisonData}>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>观察鼾声</Text>
                     <Text className={styles.comparisonValue}>
-                      {mockReport.userBForm.observeSnoreLevel
-                        ? getSnoreLevelText(mockReport.userBForm.observeSnoreLevel)
+                      {latestReport.userBForm.observeSnoreLevel
+                        ? getSnoreLevelText(latestReport.userBForm.observeSnoreLevel)
                         : '-'}
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>观察憋醒</Text>
                     <Text className={styles.comparisonValue}>
-                      {mockReport.userBForm.observeWakeUpChoked ?? 0} 次
+                      {latestReport.userBForm.observeWakeUpChoked ?? 0} 次
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>自我鼾声</Text>
                     <Text className={styles.comparisonValue}>
-                      {getSnoreLevelText(mockReport.userBForm.snoreLevel)}
+                      {getSnoreLevelText(latestReport.userBForm.snoreLevel)}
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>起夜</Text>
                     <Text className={styles.comparisonValue}>
-                      {mockReport.userBForm.nightWakeCount} 次
+                      {latestReport.userBForm.nightWakeCount} 次
                     </Text>
                   </View>
                   <View className={styles.comparisonItem}>
                     <Text className={styles.comparisonLabel}>精神</Text>
                     <Text className={styles.comparisonValue}>
-                      {getEnergyLevelText(mockReport.userBForm.energyLevel)}
+                      {getEnergyLevelText(latestReport.userBForm.energyLevel)}
                     </Text>
                   </View>
                 </View>
@@ -253,7 +287,7 @@ const ReportPage: React.FC = () => {
 
           <View className={styles.section}>
             <Text className={styles.sectionTitle}>数据趋势</Text>
-            <DataChart title="小明的睡眠指标（满分5分）" dataPoints={chartData} />
+            <DataChart title={`${currentUser.name}的睡眠指标（满分5分）`} dataPoints={chartData} />
           </View>
 
           <View className={styles.section}>
@@ -264,25 +298,25 @@ const ReportPage: React.FC = () => {
                 认知差异提示
               </Text>
               <Text className={styles.differenceText}>
-                {mockReport.analysis.differences.notes}
+                {latestReport.analysis.differences.notes}
               </Text>
               <View className={styles.differenceStats}>
                 <View className={styles.differenceStat}>
                   <Text className={styles.differenceStatLabel}>鼾声认知差异</Text>
                   <Text className={styles.differenceStatValue}>
-                    {mockReport.analysis.differences.snoreDiff} 级
+                    {latestReport.analysis.differences.snoreDiff} 级
                   </Text>
                 </View>
                 <View className={styles.differenceStat}>
                   <Text className={styles.differenceStatLabel}>憋醒认知差异</Text>
                   <Text className={styles.differenceStatValue}>
-                    {mockReport.analysis.differences.wakeDiff} 次
+                    {latestReport.analysis.differences.wakeDiff} 次
                   </Text>
                 </View>
                 <View className={styles.differenceStat}>
                   <Text className={styles.differenceStatLabel}>数据一致性</Text>
                   <Text className={styles.differenceStatValue}>
-                    {mockReport.analysis.snoreConsistency}%
+                    {latestReport.analysis.snoreConsistency}%
                   </Text>
                 </View>
               </View>
@@ -292,7 +326,7 @@ const ReportPage: React.FC = () => {
           <View className={styles.section}>
             <Text className={styles.sectionTitle}>风险提示</Text>
             <View className={styles.risksList}>
-              {mockReport.risks.map((risk: RiskTip) => (
+              {latestReport.risks.map((risk: RiskTip) => (
                 <View
                   key={risk.id}
                   className={`${styles.riskItem} ${styles[risk.level]}`}
@@ -339,24 +373,31 @@ const ReportPage: React.FC = () => {
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>历史报告</Text>
           <View className={styles.historyReports}>
-            {mockReports.slice(1).map((report) => (
-              <View
-                key={report.id}
-                className={styles.historyCard}
-                onClick={() => handleViewDetail(report.id)}
-              >
-                <View className={styles.historyScore}>
-                  <Text>{report.analysis.overallScore}</Text>
-                </View>
-                <View className={styles.historyInfo}>
-                  <Text className={styles.historyDate}>{report.date}</Text>
-                  <Text className={styles.historyDesc}>
-                    {riskLevelText[report.analysis.riskLevel]} · {report.risks.length} 个风险提示
-                  </Text>
-                </View>
-                <Text style={{ color: '#86909C' }}>›</Text>
+            {historyReports.length === 0 ? (
+              <View className={styles.emptyState}>
+                <Text className={styles.emptyIcon}>📊</Text>
+                <Text className={styles.emptyText}>暂无历史报告</Text>
               </View>
-            ))}
+            ) : (
+              historyReports.map((report) => (
+                <View
+                  key={report.id}
+                  className={styles.historyCard}
+                  onClick={() => handleViewDetail(report.id)}
+                >
+                  <View className={styles.historyScore}>
+                    <Text>{report.analysis.overallScore}</Text>
+                  </View>
+                  <View className={styles.historyInfo}>
+                    <Text className={styles.historyDate}>{report.date}</Text>
+                    <Text className={styles.historyDesc}>
+                      {riskLevelText[report.analysis.riskLevel]} · {report.risks.length} 个风险提示
+                    </Text>
+                  </View>
+                  <Text style={{ color: '#86909C' }}>›</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </View>

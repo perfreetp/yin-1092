@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useRouter, useDidShow } from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
 import {
   mockUserA,
@@ -10,6 +10,7 @@ import {
   mockEnvironmentChecklist,
   mockReminders,
 } from '@/data/mockData';
+import { generateId } from '@/utils/date';
 import {
   Suggestion,
   MedicalChecklist,
@@ -22,37 +23,61 @@ type TabType = 'lifestyle' | 'environment' | 'medical' | 'reminder';
 
 const AdvicePage: React.FC = () => {
   const { state, dispatch } = useSleep();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('lifestyle');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(mockSuggestions);
-  const [medicalChecklist, setMedicalChecklist] = useState<MedicalChecklist[]>(mockMedicalChecklist);
-  const [environmentChecklist, setEnvironmentChecklist] = useState<EnvironmentChecklist[]>(mockEnvironmentChecklist);
-  const [reminders, setReminders] = useState<RetestReminder[]>(mockReminders);
+
+  const suggestions = useMemo<Suggestion[]>(() => {
+    return state.suggestions.length > 0 ? state.suggestions : mockSuggestions;
+  }, [state.suggestions]);
+
+  const medicalChecklist = useMemo<MedicalChecklist[]>(() => {
+    return state.medicalChecklist.length > 0 ? state.medicalChecklist : mockMedicalChecklist;
+  }, [state.medicalChecklist]);
+
+  const environmentChecklist = useMemo<EnvironmentChecklist[]>(() => {
+    return state.environmentChecklist.length > 0 ? state.environmentChecklist : mockEnvironmentChecklist;
+  }, [state.environmentChecklist]);
+
+  const reminders = useMemo<RetestReminder[]>(() => {
+    return state.reminders.length > 0 ? state.reminders : mockReminders;
+  }, [state.reminders]);
+
+  useDidShow(() => {
+    const tab = router.params?.tab;
+    if (tab === '3' || tab === 'reminder') {
+      setActiveTab('reminder');
+    }
+  });
 
   useEffect(() => {
-    console.log('[AdvicePage] Component mounted, activeTab:', activeTab);
+    const tab = router.params?.tab;
+    if (tab === '3' || tab === 'reminder') {
+      setActiveTab('reminder');
+    }
     if (!state.currentUser) {
       dispatch({ type: 'SET_USER', payload: mockUserA });
       dispatch({ type: 'SET_PARTNER', payload: mockUserB });
+    }
+    if (state.suggestions.length === 0) {
       dispatch({ type: 'SET_SUGGESTIONS', payload: mockSuggestions });
+    }
+    if (state.medicalChecklist.length === 0) {
       dispatch({ type: 'SET_MEDICAL_CHECKLIST', payload: mockMedicalChecklist });
+    }
+    if (state.environmentChecklist.length === 0) {
       dispatch({ type: 'SET_ENVIRONMENT_CHECKLIST', payload: mockEnvironmentChecklist });
     }
-  }, [dispatch, state.currentUser, activeTab]);
+  }, [dispatch, state.currentUser, state.suggestions.length, state.medicalChecklist.length, state.environmentChecklist.length, router.params?.tab]);
 
   const handleTabChange = (tab: TabType) => {
-    console.log('[AdvicePage] Switch tab to:', tab);
     setActiveTab(tab);
   };
 
   const handleToggleSuggestion = (suggestion: Suggestion) => {
-    console.log('[AdvicePage] Toggle suggestion:', suggestion.id);
-    const updated = suggestions.map((s) =>
-      s.id === suggestion.id ? { ...s, completed: !s.completed } : s
-    );
-    setSuggestions(updated);
+    const updated = { ...suggestion, completed: !suggestion.completed };
     dispatch({
       type: 'UPDATE_SUGGESTION',
-      payload: { ...suggestion, completed: !suggestion.completed },
+      payload: updated,
     });
 
     if (!suggestion.completed) {
@@ -64,35 +89,27 @@ const AdvicePage: React.FC = () => {
   };
 
   const handleToggleMedical = (item: MedicalChecklist) => {
-    console.log('[AdvicePage] Toggle medical item:', item.id);
-    const updated = medicalChecklist.map((m) =>
-      m.id === item.id ? { ...m, checked: !m.checked } : m
-    );
-    setMedicalChecklist(updated);
+    const updated = { ...item, checked: !item.checked };
     dispatch({
       type: 'UPDATE_MEDICAL_CHECKLIST',
-      payload: { ...item, checked: !item.checked },
+      payload: updated,
     });
   };
 
   const handleToggleEnvironment = (item: EnvironmentChecklist) => {
-    console.log('[AdvicePage] Toggle environment item:', item.id);
-    const updated = environmentChecklist.map((e) =>
-      e.id === item.id ? { ...e, checked: !e.checked } : e
-    );
-    setEnvironmentChecklist(updated);
+    const updated = { ...item, checked: !item.checked };
     dispatch({
       type: 'UPDATE_ENVIRONMENT_CHECKLIST',
-      payload: { ...item, checked: !item.checked },
+      payload: updated,
     });
   };
 
   const handleToggleReminder = (reminder: RetestReminder) => {
-    console.log('[AdvicePage] Toggle reminder:', reminder.id);
-    const updated = reminders.map((r) =>
-      r.id === reminder.id ? { ...r, enabled: !r.enabled } : r
-    );
-    setReminders(updated);
+    const updated = { ...reminder, enabled: !reminder.enabled };
+    dispatch({
+      type: 'UPDATE_REMINDER',
+      payload: updated,
+    });
 
     Taro.showToast({
       title: reminder.enabled ? '已关闭提醒' : '已开启提醒',
@@ -101,10 +118,21 @@ const AdvicePage: React.FC = () => {
   };
 
   const handleAddReminder = () => {
-    console.log('[AdvicePage] Add new reminder');
+    const retestDate = new Date();
+    retestDate.setDate(retestDate.getDate() + 7);
+    const reminder: RetestReminder = {
+      id: generateId(),
+      title: '睡眠观察提醒',
+      description: '记录今天的睡眠观察数据，持续跟踪睡眠健康',
+      date: retestDate.toISOString().split('T')[0],
+      time: '08:30',
+      enabled: true,
+      repeat: 'weekly',
+    };
+    dispatch({ type: 'ADD_REMINDER', payload: reminder });
     Taro.showToast({
-      title: '功能开发中',
-      icon: 'none',
+      title: '已添加新提醒',
+      icon: 'success',
     });
   };
 

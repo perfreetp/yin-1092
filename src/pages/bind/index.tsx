@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, Input, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
 import { mockUserA, mockUserB } from '@/data/mockData';
+import { generateId } from '@/utils/date';
 
 import { User } from '@/types/sleep';
 import styles from './index.module.scss';
+
+const VALID_PARTNER_CODES = ['B8K3M2', 'C9N4P3', 'D2Q5R7'];
 
 const BindPage: React.FC = () => {
   const { state, dispatch } = useSleep();
@@ -13,6 +16,7 @@ const BindPage: React.FC = () => {
   const [inputCode, setInputCode] = useState<string[]>(['', '', '', '', '', '']);
   const [showSuccess, setShowSuccess] = useState(false);
   const [newPartner, setNewPartner] = useState<User | null>(null);
+  const inputRefs = useRef<(any)[]>([]);
 
   const isBound = state.isBound;
   const currentUser = state.currentUser || mockUserA;
@@ -20,7 +24,6 @@ const BindPage: React.FC = () => {
   const inviteCode = currentUser.bindCode || 'A8K3M2';
 
   const handleCopyCode = () => {
-    console.log('[BindPage] Copying invite code:', inviteCode);
     Taro.setClipboardData({
       data: inviteCode,
       success: () => {
@@ -33,7 +36,6 @@ const BindPage: React.FC = () => {
   };
 
   const handleShareInvite = () => {
-    console.log('[BindPage] Sharing invite');
     Taro.showActionSheet({
       itemList: ['微信分享', 'QQ分享', '复制链接'],
       success: (res) => {
@@ -46,14 +48,66 @@ const BindPage: React.FC = () => {
     });
   };
 
+  const focusInput = (index: number) => {
+    if (index < 0 || index > 5) return;
+    const ref = inputRefs.current[index];
+    if (ref) {
+      if (typeof ref.focus === 'function') {
+        ref.focus();
+      } else if (ref.$ref) {
+        try {
+          ref.$ref.focus();
+        } catch (e) {
+          // H5 fallback
+          const inputs = document.querySelectorAll(`.${styles.codeInput}`);
+          const target = inputs[index] as HTMLInputElement;
+          if (target) target.focus();
+        }
+      } else {
+        // H5 fallback
+        const inputs = document.querySelectorAll(`.${styles.codeInput}`);
+        const target = inputs[index] as HTMLInputElement;
+        if (target) target.focus();
+      }
+    } else {
+      // H5 fallback
+      const inputs = document.querySelectorAll(`.${styles.codeInput}`);
+      const target = inputs[index] as HTMLInputElement;
+      if (target) target.focus();
+    }
+  };
+
   const handleCodeInput = (index: number, value: string) => {
+    const char = value.slice(-1).toUpperCase();
     const newCode = [...inputCode];
-    newCode[index] = value.slice(-1).toUpperCase();
+
+    if (char === '' && !inputCode[index]) {
+      if (index > 0) {
+        focusInput(index - 1);
+      }
+      return;
+    }
+
+    newCode[index] = char;
     setInputCode(newCode);
 
-    if (value && index < 5) {
-      const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
-      if (nextInput) nextInput.focus();
+    if (char && index < 5) {
+      setTimeout(() => focusInput(index + 1), 10);
+    }
+
+    if (char === '' && index > 0 && !inputCode[index]) {
+      setTimeout(() => focusInput(index - 1), 10);
+    }
+  };
+
+  const handleCodeKeyDown = (index: number, e: any) => {
+    if (e.keyCode === 8 || e.key === 'Backspace') {
+      if (!inputCode[index] && index > 0) {
+        const newCode = [...inputCode];
+        newCode[index - 1] = '';
+        setInputCode(newCode);
+        setTimeout(() => focusInput(index - 1), 10);
+      }
     }
   };
 
@@ -69,7 +123,16 @@ const BindPage: React.FC = () => {
       return;
     }
 
-    if (code === 'B8K3M2' || code === inviteCode) {
+    if (code === inviteCode || code === currentUser.bindCode) {
+      Taro.showModal({
+        title: '邀请码无效',
+        content: '不能绑定自己的邀请码，请让伴侣分享Ta的邀请码给你',
+        showCancel: false,
+      });
+      return;
+    }
+
+    if (VALID_PARTNER_CODES.includes(code)) {
       const partnerUser: User = {
         id: 'user-b-' + Date.now(),
         name: '亲爱的伴侣',
@@ -77,7 +140,7 @@ const BindPage: React.FC = () => {
         gender: 'female',
         age: 28,
         role: 'userB',
-        bindCode: 'B8K3M2',
+        bindCode: code,
         bindPartnerId: currentUser.id,
         bindPartnerName: currentUser.name,
       };
@@ -277,11 +340,16 @@ const BindPage: React.FC = () => {
                   {inputCode.map((digit, index) => (
                     <Input
                       key={index}
+                      ref={(node) => {
+                        inputRefs.current[index] = node;
+                      }}
                       className={`${styles.codeInput} ${digit ? styles.filled : ''}`}
                       type="text"
                       maxlength={1}
                       value={digit}
+                      focus={index === 0 && inputCode.every((c) => !c)}
                       onInput={(e) => handleCodeInput(index, e.detail.value)}
+                      onKeyDown={(e) => handleCodeKeyDown(index, e as any)}
                     />
                   ))}
                 </View>

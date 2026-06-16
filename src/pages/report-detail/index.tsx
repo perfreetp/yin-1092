@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useRouter } from '@tarojs/taro';
 import { useSleep } from '@/store/SleepContext';
 import {
   mockReport,
@@ -9,13 +9,13 @@ import {
   mockFormA,
   mockFormB,
 } from '@/data/mockData';
-import { formatDate } from '@/utils/date';
+import { formatDate, generateId } from '@/utils/date';
 import {
   getSnoreLevelText,
   getSleepPositionText,
   getEnergyLevelText,
 } from '@/utils/analysis';
-import { MergeReport, Suggestion } from '@/types/sleep';
+import { MergeReport, Suggestion, RetestReminder } from '@/types/sleep';
 import styles from './index.module.scss';
 
 const ReportDetailPage: React.FC = () => {
@@ -71,11 +71,29 @@ const ReportDetailPage: React.FC = () => {
   const handleRetest = () => {
     console.log('[ReportDetail] Starting retest');
     Taro.showModal({
-      title: '复测提醒',
-      content: '建议在1-2周后进行复测，跟踪睡眠变化情况。是否设置提醒？',
+      title: '设置复测提醒',
+      content: '建议在1-2周后进行复测，跟踪睡眠变化情况。是否为你创建一条复测提醒？',
       success: (res) => {
         if (res.confirm) {
-          Taro.navigateTo({ url: '/pages/advice/index?tab=3' });
+          const retestDate = new Date();
+          retestDate.setDate(retestDate.getDate() + 14);
+          const reminder: RetestReminder = {
+            id: generateId(),
+            title: '睡眠复测提醒',
+            description: `根据 ${report.date} 的报告结果，建议今天重新进行睡眠观察，跟踪睡眠改善情况`,
+            date: formatDate(retestDate, 'YYYY-MM-DD'),
+            time: '09:00',
+            enabled: true,
+            repeat: 'once',
+          };
+          dispatch({ type: 'ADD_REMINDER', payload: reminder });
+          Taro.showToast({
+            title: '已创建复测提醒',
+            icon: 'success',
+          });
+          setTimeout(() => {
+            Taro.switchTab({ url: '/pages/advice/index' });
+          }, 1000);
         }
       },
     });

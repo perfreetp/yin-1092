@@ -195,6 +195,7 @@ export type SleepAction =
   | { type: 'ADD_REPORT'; payload: MergeReport }
   | { type: 'SET_REPORTS'; payload: MergeReport[] }
   | { type: 'ADD_RECORDING'; payload: Recording }
+  | { type: 'UPDATE_RECORDING'; payload: Recording }
   | { type: 'SET_RECORDINGS'; payload: Recording[] }
   | { type: 'UPDATE_SUGGESTION'; payload: Suggestion }
   | { type: 'SET_SUGGESTIONS'; payload: Suggestion[] }
@@ -202,4 +203,8 @@ export type SleepAction =
   | { type: 'SET_MEDICAL_CHECKLIST'; payload: MedicalChecklist[] }
   | { type: 'UPDATE_ENVIRONMENT_CHECKLIST'; payload: EnvironmentChecklist }
   | { type: 'SET_ENVIRONMENT_CHECKLIST'; payload: EnvironmentChecklist[] }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: 'ADD_REMINDER'; payload: RetestReminder }
+  | { type: 'UPDATE_REMINDER'; payload: RetestReminder }
+  | { type: 'SET_REMINDERS'; payload: RetestReminder[] }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'HYDRATE_STATE'; payload: Partial<SleepState> };

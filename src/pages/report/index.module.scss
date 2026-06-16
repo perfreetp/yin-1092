@@ -35,6 +35,46 @@
   padding: $spacing-lg $page-padding 120rpx;
 }
 
+.pendingBanner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: linear-gradient(135deg, #FFF7E6 0%, #FFF1CC 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  border: 2rpx solid #FFD666;
+}
+
+.pendingIcon {
+  font-size: 48rpx;
+}
+
+.pendingContent {
+  flex: 1;
+}
+
+.pendingTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: #AD6800;
+  margin-bottom: 4rpx;
+}
+
+.pendingDesc {
+  font-size: $font-size-sm;
+  color: #AD8B00;
+}
+
+.pendingBtn {
+  padding: $spacing-xs $spacing-md;
+  background: $color-primary-gradient;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
 .latestReport {
   background: $color-bg-card;
   border-radius: $radius-xl;
