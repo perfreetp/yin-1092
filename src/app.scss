@@ -1,0 +1,102 @@
+@use '@/styles/compat.scss';
+@use '@/styles/variables.scss' as *;
+
+// 全局样式
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+    sans-serif;
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background: $color-bg-page-gradient;
+  min-height: 100vh;
+}
+
+// 全局容器样式
+.pageContainer {
+  padding: $spacing-lg $page-padding;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+// 卡片通用样式
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 2rpx 16rpx rgba(74, 144, 217, 0.1);
+  margin-bottom: $spacing-md;
+}
+
+// 通用渐变按钮样式
+.gradientBtn {
+  background: $color-primary-gradient;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  height: $button-height-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+// 双人对比布局
+.twoColumn {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.columnA {
+  flex: 1;
+  background: $color-bg-tag-blue;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.columnB {
+  flex: 1;
+  background: $color-bg-tag-pink;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+// 标签样式
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  line-height: 1.4;
+}
+
+.tagBlue {
+  background: $color-bg-tag-blue;
+  color: $color-primary;
+}
+
+.tagPink {
+  background: $color-bg-tag-pink;
+  color: $color-user-b;
+}
+
+.tagGreen {
+  background: $color-bg-tag-green;
+  color: $color-health;
+}
+
+.tagWarning {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-warning;
+}
+
+.tagError {
+  background: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+}

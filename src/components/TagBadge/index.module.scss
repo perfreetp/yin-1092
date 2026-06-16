@@ -1,0 +1,55 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  white-space: nowrap;
+
+  &.sm {
+    padding: 2rpx 12rpx;
+    height: 36rpx;
+  }
+
+  &.md {
+    padding: 4rpx 16rpx;
+    height: 44rpx;
+  }
+
+  &.blue {
+    background: $color-bg-tag-blue;
+    color: $color-primary;
+  }
+
+  &.pink {
+    background: $color-bg-tag-pink;
+    color: $color-user-b;
+  }
+
+  &.green {
+    background: $color-bg-tag-green;
+    color: $color-health;
+  }
+
+  &.warning {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.error {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.default {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+}
+
+.text {
+  font-size: $font-size-xs;
+  line-height: 1.4;
+  font-weight: $font-weight-medium;
+}

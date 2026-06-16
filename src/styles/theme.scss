@@ -1,0 +1,49 @@
+// ============================================
+// 主题配色变量
+// ============================================
+
+// 品牌主题色：静谧蓝 - 代表夜晚与宁静
+$color-primary: #4A90D9;
+$color-primary-light: #6B8DD6;
+$color-primary-dark: #357ABD;
+$color-primary-gradient: linear-gradient(135deg, #4A90D9 0%, #6B8DD6 100%);
+
+// 辅助色：柔粉紫 - 用于双人互动元素
+$color-secondary: #B892E8;
+$color-secondary-light: #D4BCF5;
+$color-secondary-gradient: linear-gradient(135deg, #B892E8 0%, #D4BCF5 100%);
+
+// 健康色：薄荷绿 - 代表健康安全
+$color-health: #52C4A4;
+$color-health-light: #7DD8C0;
+
+// 双人标识色
+$color-user-a: #4A90D9;
+$color-user-b: #F76B8A;
+
+// 功能色
+$color-success: #00B42A;
+$color-warning: #FF7D00;
+$color-error: #F53F3F;
+$color-info: #4A90D9;
+
+// 背景色
+$color-bg-page: #F8FAFF;
+$color-bg-page-gradient: linear-gradient(180deg, #EEF4FF 0%, #F8FAFF 100%);
+$color-bg-card: #ffffff;
+$color-bg-hover: #F2F6FF;
+$color-bg-tag-blue: rgba(74, 144, 217, 0.1);
+$color-bg-tag-pink: rgba(247, 107, 138, 0.1);
+$color-bg-tag-green: rgba(82, 196, 164, 0.1);
+
+// 文本色
+$color-text-primary: #1D2129;
+$color-text-secondary: #4E5969;
+$color-text-tertiary: #86909C;
+$color-text-disabled: #C9CDD4;
+$color-text-white: #ffffff;
+
+// 边框色
+$color-border: #E5E6EB;
+$color-divider: #F2F3F5;
+$color-border-light: #E8EDF5;

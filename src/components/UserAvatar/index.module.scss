@@ -1,0 +1,51 @@
+@use '@/styles/variables.scss' as *;
+
+.avatarWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.avatarContainer {
+  position: relative;
+  border-radius: $radius-round;
+  overflow: hidden;
+  border: 4rpx solid $color-bg-card;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+
+  &.sm {
+    width: 72rpx;
+    height: 72rpx;
+  }
+
+  &.md {
+    width: 100rpx;
+    height: 100rpx;
+  }
+
+  &.lg {
+    width: 160rpx;
+    height: 160rpx;
+  }
+
+  &.userA {
+    border-color: $color-user-a;
+  }
+
+  &.userB {
+    border-color: $color-user-b;
+  }
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.userName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}

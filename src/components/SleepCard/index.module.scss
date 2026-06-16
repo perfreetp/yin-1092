@@ -1,0 +1,87 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 2rpx 16rpx rgba(74, 144, 217, 0.1);
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 1rpx 8rpx rgba(74, 144, 217, 0.08);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.userMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.userName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.date {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.dataGrid {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.dataItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  flex: 1;
+}
+
+.dataLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.dataValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.dataSub {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.notes {
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+}
+
+.notesText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}

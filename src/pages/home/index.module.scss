@@ -1,0 +1,485 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page-gradient;
+}
+
+.header {
+  background: $color-primary-gradient;
+  padding: $spacing-lg $page-padding $spacing-xl;
+  color: $color-text-white;
+  border-radius: 0 0 $radius-xl $radius-xl;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.dateText {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.bindStatus {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+}
+
+.statusDot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: $radius-round;
+  background: $color-health;
+}
+
+.statusText {
+  font-size: $font-size-xs;
+}
+
+.usersRow {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.userCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.userName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.userStatus {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+}
+
+.connectLine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  padding: 0 $spacing-md;
+}
+
+.heartIcon {
+  font-size: 32rpx;
+}
+
+.bindText {
+  font-size: 20rpx;
+  opacity: 0.8;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+  margin-top: -$spacing-lg;
+}
+
+.quickActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.quickBtn {
+  flex: 1;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.quickBtnIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+
+  &.primary {
+    background: $color-bg-tag-blue;
+    color: $color-primary;
+  }
+
+  &.secondary {
+    background: $color-bg-tag-pink;
+    color: $color-user-b;
+  }
+}
+
+.quickBtnText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.quickBtnDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionMore {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.todayOverview {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.overviewGrid {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.overviewColumn {
+  flex: 1;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+
+  &.userA {
+    background: $color-bg-tag-blue;
+  }
+
+  &.userB {
+    background: $color-bg-tag-pink;
+  }
+}
+
+.overviewHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.overviewName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.overviewStatus {
+  font-size: 20rpx;
+  padding: 2rpx 8rpx;
+  border-radius: $radius-xs;
+
+  &.done {
+    background: $color-health;
+    color: $color-text-white;
+  }
+
+  &.pending {
+    background: $color-warning;
+    color: $color-text-white;
+  }
+}
+
+.overviewData {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.overviewItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+}
+
+.overviewLabel {
+  color: $color-text-secondary;
+}
+
+.overviewValue {
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.reportCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.reportScore {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+}
+
+.scoreCircle {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: conic-gradient(#4A90D9 0% 68%, #E5E6EB 68% 100%);
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 96rpx;
+    height: 96rpx;
+    background: $color-bg-card;
+    border-radius: $radius-round;
+  }
+}
+
+.scoreValue {
+  position: relative;
+  z-index: 1;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.scoreLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.reportInfo {
+  flex: 1;
+}
+
+.reportTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.reportRisk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+
+  &.high {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.medium {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.low {
+    background: $color-bg-tag-green;
+    color: $color-health;
+  }
+}
+
+.reportMetrics {
+  display: flex;
+  justify-content: space-around;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.metricValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.metricLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+}
+
+.riskList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.riskItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.riskIcon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  flex-shrink: 0;
+
+  &.danger {
+    background: rgba(245, 63, 63, 0.1);
+  }
+
+  &.warning {
+    background: rgba(255, 125, 0, 0.1);
+  }
+
+  &.info {
+    background: $color-bg-tag-blue;
+  }
+}
+
+.riskContent {
+  flex: 1;
+}
+
+.riskTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.riskDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timelineItem {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-md 0;
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 20rpx;
+    top: 72rpx;
+    bottom: 0;
+    width: 2rpx;
+    background: $color-border;
+  }
+}
+
+.timelineDot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  flex-shrink: 0;
+  z-index: 1;
+
+  &.hasRisk {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.normal {
+    background: $color-bg-tag-green;
+    color: $color-health;
+  }
+}
+
+.timelineContent {
+  flex: 1;
+}
+
+.timelineTitle {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.timelineDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.timelineTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}

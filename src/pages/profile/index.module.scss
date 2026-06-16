@@ -1,0 +1,358 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page-gradient;
+  padding-bottom: 120rpx;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.coupleCard {
+  background: $color-primary-gradient;
+  border-radius: $radius-xl;
+  padding: $spacing-xl $spacing-lg;
+  margin-bottom: $spacing-lg;
+  color: $color-text-white;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '💤';
+    position: absolute;
+    font-size: 200rpx;
+    opacity: 0.1;
+    right: -40rpx;
+    top: -20rpx;
+  }
+}
+
+.coupleUsers {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.coupleUser {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.coupleName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.coupleRole {
+  font-size: $font-size-xs;
+  opacity: 0.8;
+}
+
+.coupleConnect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.heartBeat {
+  font-size: 40rpx;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.bindDays {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.coupleInfo {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+}
+
+.coupleInfoText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}
+
+.coupleInfoDesc {
+  font-size: $font-size-xs;
+  opacity: 0.8;
+  margin-top: 4rpx;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionMore {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.bindCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.bindCodeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.bindCodeLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.bindCodeValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  letter-spacing: 4rpx;
+}
+
+.bindActions {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.bindBtn {
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.primary {
+    background: $color-primary-gradient;
+    color: $color-text-white;
+  }
+
+  &.outline {
+    background: transparent;
+    color: $color-primary;
+    border: 2rpx solid $color-primary;
+  }
+}
+
+.bindBtnIcon {
+  font-size: 28rpx;
+}
+
+.bindBtnText {
+  font-size: $font-size-md;
+}
+
+.profileCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.profileInfo {
+  flex: 1;
+}
+
+.profileName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.profileMeta {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.profileEditIcon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-round;
+  background: $color-bg-hover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+}
+
+.profileFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.profileField {
+  flex: 1;
+  min-width: 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.profileFieldLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.profileFieldValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.statsGrid {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.statCard {
+  flex: 1;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  text-align: center;
+  box-shadow: $shadow-card;
+}
+
+.statValue {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.statSub {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.settingsList {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+.settingsItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+  transition: background $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.settingsIcon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+
+  &.blue {
+    background: $color-bg-tag-blue;
+  }
+
+  &.pink {
+    background: $color-bg-tag-pink;
+  }
+
+  &.green {
+    background: $color-bg-tag-green;
+  }
+
+  &.orange {
+    background: rgba(255, 125, 0, 0.1);
+  }
+}
+
+.settingsContent {
+  flex: 1;
+}
+
+.settingsTitle {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: 4rpx;
+}
+
+.settingsDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.settingsArrow {
+  color: $color-text-tertiary;
+  font-size: $font-size-lg;
+}
